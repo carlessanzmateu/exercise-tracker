@@ -1,0 +1,66 @@
+import { describe, it, expect } from 'vitest';
+
+import {
+  parseHealthImport,
+  InvalidHealthImportError,
+  UnsupportedHealthImportVersionError,
+} from './parseHealthImport';
+
+describe('parseHealthImport', () => {
+  it('parses a valid health import into HealthDay[] sorted by date asc', () => {
+    const result = parseHealthImport({
+      version: 1,
+      days: [
+        { date: '2026-05-26', steps: 11050, distanceKm: 8.04 },
+        { date: '2026-05-25', steps: 8423, distanceKm: 6.21 },
+      ],
+    });
+    expect(result).toEqual([
+      { date: '2026-05-25', steps: 8423, distanceKm: 6.21 },
+      { date: '2026-05-26', steps: 11050, distanceKm: 8.04 },
+    ]);
+  });
+
+  it('throws UnsupportedHealthImportVersionError on a wrong version', () => {
+    expect(() => parseHealthImport({ version: 99, days: [] })).toThrow(
+      UnsupportedHealthImportVersionError,
+    );
+  });
+
+  it('throws InvalidHealthImportError when days is not an array', () => {
+    expect(() => parseHealthImport({ version: 1, days: 'nope' })).toThrow(InvalidHealthImportError);
+  });
+
+  it('throws InvalidHealthImportError when payload is not an object', () => {
+    expect(() => parseHealthImport(null)).toThrow(InvalidHealthImportError);
+  });
+
+  it('drops invalid day entries but keeps the valid ones', () => {
+    const result = parseHealthImport({
+      version: 1,
+      days: [
+        { date: '2026-05-25', steps: 8423, distanceKm: 6.21 },
+        { date: 'bad', steps: 1, distanceKm: 1 },
+        { date: '2026-05-26', steps: -5, distanceKm: 1 },
+      ],
+    });
+    expect(result).toEqual([{ date: '2026-05-25', steps: 8423, distanceKm: 6.21 }]);
+  });
+
+  it('throws InvalidHealthImportError when no valid days remain', () => {
+    expect(() =>
+      parseHealthImport({ version: 1, days: [{ date: 'bad', steps: 1, distanceKm: 1 }] }),
+    ).toThrow(InvalidHealthImportError);
+  });
+
+  it('dedupes by date keeping the last occurrence', () => {
+    const result = parseHealthImport({
+      version: 1,
+      days: [
+        { date: '2026-05-25', steps: 100, distanceKm: 1 },
+        { date: '2026-05-25', steps: 9000, distanceKm: 7 },
+      ],
+    });
+    expect(result).toEqual([{ date: '2026-05-25', steps: 9000, distanceKm: 7 }]);
+  });
+});

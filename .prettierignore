@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+coverage
+*.tsbuildinfo
+package-lock.json
+
+# Tooling / settings — not project source
+.claude
+
+# Docs son escritas a mano con criterio editorial
+*.md

@@ -1,6 +1,6 @@
 ---
 id: F6-T009
-status: todo
+status: done
 title: Settings — Profile section
 sub-phase: C-profile
 depends-on: [F6-T001, F6-T006]

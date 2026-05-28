@@ -1,6 +1,6 @@
 ---
 id: F6-T003
-status: todo
+status: done
 title: Aggregate weight entries by day
 sub-phase: A-domain
 depends-on: [F6-T002]

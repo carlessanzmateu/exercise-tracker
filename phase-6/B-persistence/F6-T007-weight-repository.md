@@ -1,6 +1,6 @@
 ---
 id: F6-T007
-status: todo
+status: done
 title: Weight repository (IndexedDB weightEntries)
 sub-phase: B-persistence
 depends-on: [F6-T002, F6-T006]

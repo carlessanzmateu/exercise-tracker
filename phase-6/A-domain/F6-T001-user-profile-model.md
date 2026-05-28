@@ -1,6 +1,6 @@
 ---
 id: F6-T001
-status: todo
+status: done
 title: User profile model & normalization
 sub-phase: A-domain
 depends-on: []

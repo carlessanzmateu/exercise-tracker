@@ -377,3 +377,63 @@ describe('<Settings /> health import help (F5-T003)', () => {
     expect(accept).toMatch(/\.txt/);
   });
 });
+
+describe('<Settings /> profile section (F6-T009)', () => {
+  it('renders the Profile section with a #perfil anchor', async () => {
+    renderSettings();
+    const heading = await screen.findByRole('heading', { name: /perfil/i });
+    expect(heading).toHaveAttribute('id', 'perfil');
+  });
+
+  it('shows the form prefilled when a profile exists', async () => {
+    const getProfile = vi
+      .fn()
+      .mockResolvedValue({ heightCm: 180, birthdate: '1990-05-26', sex: 'male' });
+    renderSettings(createMockRepo({ getProfile }));
+
+    const heightInput = (await screen.findByLabelText(/altura/i)) as HTMLInputElement;
+    const birthdateInput = (await screen.findByLabelText(
+      /fecha de nacimiento/i,
+    )) as HTMLInputElement;
+    expect(heightInput.value).toBe('180');
+    expect(birthdateInput.value).toBe('1990-05-26');
+    const maleRadio = screen.getByLabelText(/^hombre$/i) as HTMLInputElement;
+    expect(maleRadio.checked).toBe(true);
+  });
+
+  it('saves a valid profile via repo.setProfile and shows a success message', async () => {
+    const setProfile = vi.fn().mockResolvedValue(undefined);
+    renderSettings(createMockRepo({ setProfile }));
+
+    fireEvent.change(await screen.findByLabelText(/altura/i), { target: { value: '175' } });
+    fireEvent.change(screen.getByLabelText(/fecha de nacimiento/i), {
+      target: { value: '1990-05-26' },
+    });
+    fireEvent.click(screen.getByLabelText(/^hombre$/i));
+    fireEvent.click(screen.getByRole('button', { name: /guardar perfil/i }));
+
+    await waitFor(() =>
+      expect(setProfile).toHaveBeenCalledWith({
+        heightCm: 175,
+        birthdate: '1990-05-26',
+        sex: 'male',
+      }),
+    );
+    expect(await screen.findByText(/perfil guardado/i)).toBeInTheDocument();
+  });
+
+  it('shows an inline error when the form is invalid (e.g. age < 5)', async () => {
+    const setProfile = vi.fn().mockResolvedValue(undefined);
+    renderSettings(createMockRepo({ setProfile }));
+
+    fireEvent.change(await screen.findByLabelText(/altura/i), { target: { value: '175' } });
+    fireEvent.change(screen.getByLabelText(/fecha de nacimiento/i), {
+      target: { value: '2099-01-01' },
+    });
+    fireEvent.click(screen.getByLabelText(/^hombre$/i));
+    fireEvent.click(screen.getByRole('button', { name: /guardar perfil/i }));
+
+    expect(await screen.findByText(/perfil inválido/i)).toBeInTheDocument();
+    expect(setProfile).not.toHaveBeenCalled();
+  });
+});

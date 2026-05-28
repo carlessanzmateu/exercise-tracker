@@ -141,43 +141,56 @@ phase-6/
 
 | ID | Título | Estado |
 |---|---|---|
-| F6-T001 | User profile model & normalization | `todo` |
-| F6-T002 | Weight entry model & normalization | `todo` |
-| F6-T003 | Aggregate weight entries by day | `todo` |
-| F6-T004 | Window range per filter | `todo` |
-| F6-T005 | BMR Mifflin-St Jeor (pure) | `todo` |
+| F6-T001 | User profile model & normalization | `done` |
+| F6-T002 | Weight entry model & normalization | `done` |
+| F6-T003 | Aggregate weight entries by day | `done` |
+| F6-T004 | Window range per filter | `done` |
+| F6-T005 | BMR Mifflin-St Jeor (pure) | `done` |
 
 ### Sub-fase B — Persistencia (IndexedDB + backup)
 
 | ID | Título | Estado |
 |---|---|---|
-| F6-T006 | Profile repository (IndexedDB `userProfile`) | `todo` |
-| F6-T007 | Weight repository (IndexedDB `weightEntries`) | `todo` |
-| F6-T008 | Backup v3 (profile + weights) | `todo` |
+| F6-T006 | Profile repository (IndexedDB `userProfile`) | `done` |
+| F6-T007 | Weight repository (IndexedDB `weightEntries`) | `done` |
+| F6-T008 | Backup v3 (profile + weights) | `done` |
 
 ### Sub-fase C — Perfil en Ajustes
 
 | ID | Título | Estado |
 |---|---|---|
-| F6-T009 | Settings: profile section | `todo` |
+| F6-T009 | Settings: profile section | `done` |
 
 ### Sub-fase D — Vista de Peso
 
 | ID | Título | Estado |
 |---|---|---|
-| F6-T010 | TabBar entry + `/weight` route + block-when-no-profile | `todo` |
-| F6-T011 | Weight add form (inline) | `todo` |
-| F6-T012 | Weight entries list (edit + delete) | `todo` |
-| F6-T013 | FilterPills component (generic) | `todo` |
-| F6-T014 | Weight chart scroller (window + lateral scroll) | `todo` |
-| F6-T015 | Trend + projection on weight chart | `todo` |
-| F6-T016 | BMR header (today, single number) | `todo` |
+| F6-T010 | TabBar entry + `/weight` route + block-when-no-profile | `done` |
+| F6-T011 | Weight add form (inline) | `done` |
+| F6-T012 | Weight entries list (edit + delete) | `done` |
+| F6-T013 | FilterPills component (generic) | `done` |
+| F6-T014 | Weight chart scroller (window + lateral scroll) | `done` |
+| F6-T015 | Trend + projection on weight chart | `done` |
+| F6-T016 | BMR header (today, single number) | `done` |
 
 ---
 
 ## Próxima tarea
 
-**F6-T001** — User profile model & normalization (`phase-6/A-domain/F6-T001-user-profile-model.md`).
+**Fase 6 completa.** No queda trabajo pendiente.
+
+---
+
+## Estado de la fase
+
+**Fase 6 COMPLETADA el 2026-05-28.** Todas las tareas (F6-T001 … F6-T016) están en `done`.
+
+Entregado:
+- Dominio puro: `UserProfile`, `WeightEntry`, agregación diaria, ventanas de los 6 filtros, BMR Mifflin-St Jeor como función pura (preparada para fase 7).
+- Persistencia: DB v3 con stores `userProfile` y `weightEntries`, repositorio con CRUD completo y backup v3 compatible con v1/v2.
+- Perfil en Ajustes con anchor `#perfil` y validación.
+- Nuevo tab "Peso" con bloqueo si no hay perfil, formulario inline para añadir peso, lista de entradas (editar/borrar con confirmación), gráfica con filtro de 6 ventanas (Sem/Mes/Trim/Sem/Año/YTD), scroll lateral (swipe móvil + botones tablet+), tendencia + proyección con banda de confianza solo en la ventana actual, y cabecera con BMR de hoy.
+- Suite completa en verde (`npm run lint`, `npm run format:check`, `npm test`, `npm run build`).
 
 ---
 

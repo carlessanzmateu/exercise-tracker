@@ -1,6 +1,6 @@
 ---
 id: F6-T005
-status: todo
+status: done
 title: BMR Mifflin-St Jeor (pure function)
 sub-phase: A-domain
 depends-on: [F6-T001]

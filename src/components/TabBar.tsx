@@ -38,11 +38,25 @@ function ChartIcon() {
   );
 }
 
+function ScaleIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
+      <path
+        d="M6 4h12 M12 4v3 M5 7h14l-2 11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 7z"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function TabBar() {
   const { pathname } = useLocation();
 
   const feedActive = pathname === '/' || pathname.startsWith('/session/');
   const progressActive = pathname === '/progress';
+  const weightActive = pathname === '/weight';
   const settingsActive = pathname === '/settings';
 
   return (
@@ -69,6 +83,14 @@ export function TabBar() {
       >
         <ChartIcon />
         <span>Progreso</span>
+      </Link>
+      <Link
+        to="/weight"
+        className={`tab-bar__item${weightActive ? ' tab-bar__item--active' : ''}`}
+        aria-current={weightActive ? 'page' : undefined}
+      >
+        <ScaleIcon />
+        <span>Peso</span>
       </Link>
       <Link
         to="/settings"

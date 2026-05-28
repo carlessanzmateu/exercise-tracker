@@ -1,6 +1,6 @@
 ---
 id: F6-T013
-status: todo
+status: done
 title: FilterPills component (generic)
 sub-phase: D-weight-view
 depends-on: []

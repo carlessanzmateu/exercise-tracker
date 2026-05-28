@@ -1,6 +1,6 @@
 ---
 id: F6-T014
-status: todo
+status: done
 title: Weight chart scroller (window + lateral scroll)
 sub-phase: D-weight-view
 depends-on: [F6-T003, F6-T004, F6-T011, F6-T013]

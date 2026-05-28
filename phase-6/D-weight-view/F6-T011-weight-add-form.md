@@ -1,6 +1,6 @@
 ---
 id: F6-T011
-status: todo
+status: done
 title: Weight add form (inline)
 sub-phase: D-weight-view
 depends-on: [F6-T002, F6-T007, F6-T010]

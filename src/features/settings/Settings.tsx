@@ -1,8 +1,9 @@
-import { useState, type ChangeEvent } from 'react';
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useSessionRepository } from '@/data/useSessionRepository';
 import { parseHealthImport } from '@/domain/health/parseHealthImport';
+import { normalizeUserProfile, type Sex } from '@/domain/profile/userProfile';
 
 import { buildBackupFilename } from './buildBackupFilename';
 
@@ -32,6 +33,49 @@ export function Settings({ now = () => new Date() }: { now?: () => Date } = {}) 
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [healthMessage, setHealthMessage] = useState<string | null>(null);
+  const [profileHeight, setProfileHeight] = useState<string>('');
+  const [profileBirthdate, setProfileBirthdate] = useState<string>('');
+  const [profileSex, setProfileSex] = useState<Sex | ''>('');
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileMessage, setProfileMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    repo.getProfile().then((stored) => {
+      if (cancelled || !stored) return;
+      setProfileHeight(String(stored.heightCm));
+      setProfileBirthdate(stored.birthdate);
+      setProfileSex(stored.sex);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [repo]);
+
+  async function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setProfileError(null);
+    setProfileMessage(null);
+
+    const candidate = normalizeUserProfile(
+      {
+        heightCm: Number(profileHeight),
+        birthdate: profileBirthdate,
+        sex: profileSex,
+      },
+      now(),
+    );
+
+    if (!candidate) {
+      setProfileError(
+        'Perfil inválido. Comprueba altura (>0), fecha de nacimiento (no futura, edad ≥ 5) y sexo.',
+      );
+      return;
+    }
+
+    await repo.setProfile(candidate);
+    setProfileMessage('Perfil guardado.');
+  }
 
   async function handleExport() {
     const stamp = now();
@@ -141,6 +185,75 @@ export function Settings({ now = () => new Date() }: { now?: () => Date } = {}) 
           <input type="file" accept="application/json" onChange={handleImport} />
         </label>
       </div>
+
+      <h3 id="perfil" className="settings-section-title">
+        Perfil
+      </h3>
+      <p className="notice">
+        Usamos estos datos para calcular tu BMR (energía en reposo). Se almacenan localmente.
+      </p>
+      <form className="profile-form" onSubmit={handleProfileSubmit} noValidate>
+        <div className="profile-form__row">
+          <label htmlFor="profile-height">Altura (cm)</label>
+          <input
+            id="profile-height"
+            type="number"
+            inputMode="decimal"
+            step="0.1"
+            min="50"
+            max="260"
+            value={profileHeight}
+            onChange={(e) => setProfileHeight(e.target.value)}
+            required
+          />
+        </div>
+        <div className="profile-form__row">
+          <label htmlFor="profile-birthdate">Fecha de nacimiento</label>
+          <input
+            id="profile-birthdate"
+            type="date"
+            value={profileBirthdate}
+            onChange={(e) => setProfileBirthdate(e.target.value)}
+            required
+          />
+        </div>
+        <fieldset className="profile-form__sex">
+          <legend>Sexo</legend>
+          <label>
+            <input
+              type="radio"
+              name="profile-sex"
+              value="male"
+              checked={profileSex === 'male'}
+              onChange={() => setProfileSex('male')}
+            />
+            Hombre
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="profile-sex"
+              value="female"
+              checked={profileSex === 'female'}
+              onChange={() => setProfileSex('female')}
+            />
+            Mujer
+          </label>
+        </fieldset>
+        <button type="submit" className="btn btn-primary btn-full">
+          Guardar perfil
+        </button>
+      </form>
+      {profileMessage ? (
+        <p role="status" className="settings-success">
+          {profileMessage}
+        </p>
+      ) : null}
+      {profileError ? (
+        <p role="alert" className="alert-error">
+          {profileError}
+        </p>
+      ) : null}
 
       <h3 className="settings-section-title">Datos de Salud</h3>
       <p className="notice">

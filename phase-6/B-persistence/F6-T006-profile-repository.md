@@ -1,6 +1,6 @@
 ---
 id: F6-T006
-status: todo
+status: done
 title: Profile repository (IndexedDB userProfile)
 sub-phase: B-persistence
 depends-on: [F6-T001]

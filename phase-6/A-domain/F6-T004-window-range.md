@@ -1,6 +1,6 @@
 ---
 id: F6-T004
-status: todo
+status: done
 title: Window range per filter
 sub-phase: A-domain
 depends-on: []

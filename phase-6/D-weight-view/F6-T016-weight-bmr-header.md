@@ -1,6 +1,6 @@
 ---
 id: F6-T016
-status: todo
+status: done
 title: BMR header (today, single number)
 sub-phase: D-weight-view
 depends-on: [F6-T005, F6-T010, F6-T011]

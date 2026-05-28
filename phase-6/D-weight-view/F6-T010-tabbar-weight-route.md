@@ -1,6 +1,6 @@
 ---
 id: F6-T010
-status: todo
+status: done
 title: TabBar entry + /weight route + block-when-no-profile
 sub-phase: D-weight-view
 depends-on: [F6-T006, F6-T009]

@@ -1,6 +1,6 @@
 ---
 id: F6-T012
-status: todo
+status: done
 title: Weight entries list (edit + delete)
 sub-phase: D-weight-view
 depends-on: [F6-T007, F6-T011]

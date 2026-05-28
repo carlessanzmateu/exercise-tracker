@@ -1,6 +1,6 @@
 ---
 id: F6-T015
-status: todo
+status: done
 title: Trend + projection on weight chart
 sub-phase: D-weight-view
 depends-on: [F6-T004, F6-T014]

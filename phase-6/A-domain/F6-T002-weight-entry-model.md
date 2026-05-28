@@ -1,6 +1,6 @@
 ---
 id: F6-T002
-status: todo
+status: done
 title: Weight entry model & normalization
 sub-phase: A-domain
 depends-on: []

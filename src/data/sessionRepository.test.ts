@@ -306,16 +306,18 @@ describe('SessionRepository.exportAll', () => {
     };
   }
 
-  it('with an empty DB returns { version: 2, exportedAt, sessions: [], healthDays: [] }', async () => {
+  it('with an empty DB returns { version: 3, exportedAt, sessions: [], healthDays: [], profile: null, weightEntries: [] }', async () => {
     const now = new Date('2026-05-26T15:30:00.000Z');
 
     const payload = await repo.exportAll(now);
 
     expect(payload).toEqual<ExportPayload>({
-      version: 2,
+      version: 3,
       exportedAt: now.toISOString(),
       sessions: [],
       healthDays: [],
+      profile: null,
+      weightEntries: [],
     });
   });
 
@@ -331,7 +333,7 @@ describe('SessionRepository.exportAll', () => {
     const payload = await repo.exportAll(now);
     const listed = await repo.list();
 
-    expect(payload.version).toBe(2);
+    expect(payload.version).toBe(3);
     expect(payload.exportedAt).toBe(now.toISOString());
     expect(payload.sessions).toEqual(listed);
     expect(payload.sessions.map((s) => s.id)).toEqual(['s-c', 's-b', 's-a']);
@@ -426,12 +428,11 @@ describe('SessionRepository backup v2 (F4-T006)', () => {
     return { id, startedAt, createdAt: startedAt, updatedAt: startedAt, exercises: [] };
   }
 
-  it('exportAll returns version 2 including healthDays', async () => {
+  it('exportAll includes healthDays from the store', async () => {
     await repo.upsertHealthDays([{ date: '2026-05-25', steps: 8423, distanceKm: 6.21 }]);
 
     const payload = await repo.exportAll(new Date('2026-05-26T15:30:00.000Z'));
 
-    expect(payload.version).toBe(2);
     expect(payload.healthDays).toEqual([{ date: '2026-05-25', steps: 8423, distanceKm: 6.21 }]);
   });
 
@@ -543,6 +544,294 @@ describe('SessionRepository health days (F4-T002)', () => {
     const upgradedRepo = createSessionRepository(upgraded);
     expect(await upgradedRepo.list()).toHaveLength(1);
     upgraded.close();
+  });
+});
+
+describe('SessionRepository user profile (F6-T006)', () => {
+  let db: OpenedDB;
+  let repo: SessionRepository;
+
+  beforeEach(async () => {
+    const dbName = `exercise-tracker-test-${Date.now()}-${Math.random()}`;
+    db = await openDB({ name: dbName });
+    repo = createSessionRepository(db);
+  });
+
+  afterEach(() => {
+    db.close();
+  });
+
+  it('returns null when no profile is stored', async () => {
+    expect(await repo.getProfile()).toBeNull();
+  });
+
+  it('stores and reads back a profile (without exposing the internal id)', async () => {
+    await repo.setProfile({ heightCm: 175, birthdate: '1990-05-26', sex: 'male' });
+    const stored = await repo.getProfile();
+    expect(stored).toEqual({ heightCm: 175, birthdate: '1990-05-26', sex: 'male' });
+    expect(stored && 'id' in stored).toBe(false);
+  });
+
+  it('setProfile overwrites the existing profile', async () => {
+    await repo.setProfile({ heightCm: 175, birthdate: '1990-05-26', sex: 'male' });
+    await repo.setProfile({ heightCm: 180, birthdate: '1985-01-01', sex: 'female' });
+    expect(await repo.getProfile()).toEqual({
+      heightCm: 180,
+      birthdate: '1985-01-01',
+      sex: 'female',
+    });
+  });
+
+  it('clearProfile removes the stored profile', async () => {
+    await repo.setProfile({ heightCm: 175, birthdate: '1990-05-26', sex: 'male' });
+    await repo.clearProfile();
+    expect(await repo.getProfile()).toBeNull();
+  });
+
+  it('upgrades cleanly from v2 keeping sessions and healthDays intact', async () => {
+    const name = `exercise-tracker-test-${Date.now()}-${Math.random()}`;
+    const v2 = await idbOpenDB(name, 2, {
+      upgrade(database) {
+        const sessions = database.createObjectStore('sessions', { keyPath: 'id' });
+        sessions.createIndex('startedAt', 'startedAt');
+        database.createObjectStore('healthDays', { keyPath: 'date' });
+      },
+    });
+    await v2.put('sessions', {
+      id: 's1',
+      startedAt: '2026-05-26T10:00:00.000Z',
+      createdAt: '2026-05-26T10:00:00.000Z',
+      updatedAt: '2026-05-26T10:00:00.000Z',
+      exercises: [],
+    });
+    await v2.put('healthDays', { date: '2026-05-26', steps: 100, distanceKm: 1 });
+    v2.close();
+
+    const upgraded = await openDB({ name });
+    expect(upgraded.objectStoreNames.contains('userProfile')).toBe(true);
+    const upgradedRepo = createSessionRepository(upgraded);
+    expect(await upgradedRepo.list()).toHaveLength(1);
+    expect(await upgradedRepo.listHealthDays()).toHaveLength(1);
+    expect(await upgradedRepo.getProfile()).toBeNull();
+    upgraded.close();
+  });
+});
+
+describe('SessionRepository backup v3 (F6-T008)', () => {
+  let db: OpenedDB;
+  let repo: SessionRepository;
+
+  beforeEach(async () => {
+    const dbName = `exercise-tracker-test-${Date.now()}-${Math.random()}`;
+    db = await openDB({ name: dbName });
+    repo = createSessionRepository(db);
+  });
+
+  afterEach(() => {
+    db.close();
+  });
+
+  function makeSession(id: string, startedAt: string): Session {
+    return { id, startedAt, createdAt: startedAt, updatedAt: startedAt, exercises: [] };
+  }
+
+  it('exportAll returns version 3 including profile and weightEntries', async () => {
+    await repo.setProfile({ heightCm: 175, birthdate: '1990-05-26', sex: 'male' });
+    await repo.addWeightEntry({ id: 'w1', recordedAt: '2026-05-28T08:00:00', weightKg: 75 });
+
+    const payload = await repo.exportAll(new Date('2026-05-28T15:30:00.000Z'));
+
+    expect(payload.version).toBe(3);
+    expect(payload.profile).toEqual({ heightCm: 175, birthdate: '1990-05-26', sex: 'male' });
+    expect(payload.weightEntries).toEqual([
+      { id: 'w1', recordedAt: '2026-05-28T08:00:00', weightKg: 75 },
+    ]);
+  });
+
+  it('importAll v3 replaces sessions, health days, profile and weights', async () => {
+    await repo.save(makeSession('s-old', '2026-01-01T08:00:00.000Z'));
+    await repo.upsertHealthDays([{ date: '2026-01-01', steps: 1, distanceKm: 0.1 }]);
+    await repo.setProfile({ heightCm: 170, birthdate: '1985-01-01', sex: 'female' });
+    await repo.addWeightEntry({ id: 'old', recordedAt: '2026-01-01T08:00:00', weightKg: 70 });
+
+    await repo.importAll({
+      version: 3,
+      exportedAt: '2026-05-28T15:30:00.000Z',
+      sessions: [makeSession('s-new', '2026-05-01T10:00:00.000Z')],
+      healthDays: [{ date: '2026-05-01', steps: 9000, distanceKm: 7 }],
+      profile: { heightCm: 175, birthdate: '1990-05-26', sex: 'male' },
+      weightEntries: [{ id: 'new', recordedAt: '2026-05-28T08:00:00', weightKg: 75 }],
+    });
+
+    expect((await repo.list()).map((s) => s.id)).toEqual(['s-new']);
+    expect(await repo.listHealthDays()).toEqual([
+      { date: '2026-05-01', steps: 9000, distanceKm: 7 },
+    ]);
+    expect(await repo.getProfile()).toEqual({
+      heightCm: 175,
+      birthdate: '1990-05-26',
+      sex: 'male',
+    });
+    expect(await repo.listWeightEntries()).toEqual([
+      { id: 'new', recordedAt: '2026-05-28T08:00:00', weightKg: 75 },
+    ]);
+  });
+
+  it('importAll v3 with profile=null clears the stored profile', async () => {
+    await repo.setProfile({ heightCm: 175, birthdate: '1990-05-26', sex: 'male' });
+
+    await repo.importAll({
+      version: 3,
+      exportedAt: '',
+      sessions: [],
+      healthDays: [],
+      profile: null,
+      weightEntries: [],
+    });
+
+    expect(await repo.getProfile()).toBeNull();
+  });
+
+  it('importAll still accepts a v2 payload without touching profile/weights', async () => {
+    await repo.setProfile({ heightCm: 175, birthdate: '1990-05-26', sex: 'male' });
+    await repo.addWeightEntry({ id: 'w1', recordedAt: '2026-05-28T08:00:00', weightKg: 75 });
+
+    await repo.importAll({
+      version: 2,
+      exportedAt: '',
+      sessions: [],
+      healthDays: [{ date: '2026-05-01', steps: 9000, distanceKm: 7 }],
+    });
+
+    expect(await repo.getProfile()).toEqual({
+      heightCm: 175,
+      birthdate: '1990-05-26',
+      sex: 'male',
+    });
+    expect(await repo.listWeightEntries()).toHaveLength(1);
+  });
+
+  it('importAll still accepts a v1 payload without touching profile/weights', async () => {
+    await repo.setProfile({ heightCm: 175, birthdate: '1990-05-26', sex: 'male' });
+    await repo.addWeightEntry({ id: 'w1', recordedAt: '2026-05-28T08:00:00', weightKg: 75 });
+
+    await repo.importAll({
+      version: 1,
+      exportedAt: '',
+      sessions: [],
+    });
+
+    expect(await repo.getProfile()).toEqual({
+      heightCm: 175,
+      birthdate: '1990-05-26',
+      sex: 'male',
+    });
+    expect(await repo.listWeightEntries()).toHaveLength(1);
+  });
+
+  it('importAll v3 throws when weightEntries is missing or not an array', async () => {
+    const base = {
+      version: 3,
+      exportedAt: '',
+      sessions: [],
+      healthDays: [],
+      profile: null,
+    };
+    await expect(repo.importAll(base)).rejects.toBeInstanceOf(InvalidImportPayloadError);
+    await expect(repo.importAll({ ...base, weightEntries: 'nope' })).rejects.toBeInstanceOf(
+      InvalidImportPayloadError,
+    );
+  });
+
+  it('importAll v3 throws when profile is neither null nor a valid object', async () => {
+    const base = {
+      version: 3,
+      exportedAt: '',
+      sessions: [],
+      healthDays: [],
+      weightEntries: [],
+    };
+    await expect(repo.importAll({ ...base, profile: 'invalid' })).rejects.toBeInstanceOf(
+      InvalidImportPayloadError,
+    );
+    await expect(repo.importAll({ ...base, profile: 123 })).rejects.toBeInstanceOf(
+      InvalidImportPayloadError,
+    );
+  });
+
+  it('rejects an unsupported version (e.g. 99)', async () => {
+    await expect(
+      repo.importAll({ version: 99, exportedAt: '', sessions: [] }),
+    ).rejects.toBeInstanceOf(UnsupportedImportVersionError);
+  });
+});
+
+describe('SessionRepository weight entries (F6-T007)', () => {
+  let db: OpenedDB;
+  let repo: SessionRepository;
+
+  beforeEach(async () => {
+    const dbName = `exercise-tracker-test-${Date.now()}-${Math.random()}`;
+    db = await openDB({ name: dbName });
+    repo = createSessionRepository(db);
+  });
+
+  afterEach(() => {
+    db.close();
+  });
+
+  it('returns an empty list when no weight entries exist', async () => {
+    expect(await repo.listWeightEntries()).toEqual([]);
+  });
+
+  it('addWeightEntry persists and listWeightEntries returns them sorted by recordedAt asc', async () => {
+    await repo.addWeightEntry({ id: 'b', recordedAt: '2026-05-28T20:00:00', weightKg: 75.5 });
+    await repo.addWeightEntry({ id: 'a', recordedAt: '2026-05-28T08:00:00', weightKg: 75.0 });
+    await repo.addWeightEntry({ id: 'c', recordedAt: '2026-05-29T08:00:00', weightKg: 76.0 });
+
+    const entries = await repo.listWeightEntries();
+    expect(entries.map((e) => e.id)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('addWeightEntry with an existing id overwrites (put semantics)', async () => {
+    await repo.addWeightEntry({ id: 'a', recordedAt: '2026-05-28T08:00:00', weightKg: 75.0 });
+    await repo.addWeightEntry({ id: 'a', recordedAt: '2026-05-28T08:00:00', weightKg: 80.0 });
+
+    const entries = await repo.listWeightEntries();
+    expect(entries).toHaveLength(1);
+    expect(entries[0].weightKg).toBe(80.0);
+  });
+
+  it('updateWeightEntry changes recordedAt and weightKg while preserving id', async () => {
+    await repo.addWeightEntry({ id: 'a', recordedAt: '2026-05-28T08:00:00', weightKg: 75.0 });
+    await repo.updateWeightEntry('a', { recordedAt: '2026-05-29T09:00:00', weightKg: 76.2 });
+
+    const entries = await repo.listWeightEntries();
+    expect(entries).toEqual([{ id: 'a', recordedAt: '2026-05-29T09:00:00', weightKg: 76.2 }]);
+  });
+
+  it('updateWeightEntry throws when the id does not exist', async () => {
+    await expect(
+      repo.updateWeightEntry('missing', { recordedAt: '2026-05-28T08:00:00', weightKg: 75 }),
+    ).rejects.toThrow();
+  });
+
+  it('deleteWeightEntry removes the entry', async () => {
+    await repo.addWeightEntry({ id: 'a', recordedAt: '2026-05-28T08:00:00', weightKg: 75.0 });
+    await repo.deleteWeightEntry('a');
+    expect(await repo.listWeightEntries()).toEqual([]);
+  });
+
+  it('deleteWeightEntry is a no-op for an unknown id', async () => {
+    await expect(repo.deleteWeightEntry('missing')).resolves.toBeUndefined();
+  });
+
+  it('allows multiple entries on the same local day', async () => {
+    await repo.addWeightEntry({ id: 'a', recordedAt: '2026-05-28T08:00:00', weightKg: 75.0 });
+    await repo.addWeightEntry({ id: 'b', recordedAt: '2026-05-28T20:00:00', weightKg: 76.0 });
+
+    const entries = await repo.listWeightEntries();
+    expect(entries).toHaveLength(2);
   });
 });
 

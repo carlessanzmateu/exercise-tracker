@@ -85,3 +85,21 @@ describe('<TabBar /> progress tab (F3-T011)', () => {
     expect(screen.getByRole('link', { name: /progreso/i })).not.toHaveAttribute('aria-current');
   });
 });
+
+describe('<TabBar /> weight tab (F6-T010)', () => {
+  it('renders a link to /weight with text "Peso"', () => {
+    renderAt('/');
+    const link = screen.getByRole('link', { name: /^peso$/i });
+    expect(link).toHaveAttribute('href', '/weight');
+  });
+
+  it('marks the weight tab as active when at /weight', () => {
+    renderAt('/weight');
+    expect(screen.getByRole('link', { name: /^peso$/i })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('does not mark the weight tab as active at /', () => {
+    renderAt('/');
+    expect(screen.getByRole('link', { name: /^peso$/i })).not.toHaveAttribute('aria-current');
+  });
+});

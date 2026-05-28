@@ -1,6 +1,6 @@
 ---
 id: F6-T008
-status: todo
+status: done
 title: Backup v3 (profile + weightEntries)
 sub-phase: B-persistence
 depends-on: [F6-T006, F6-T007]

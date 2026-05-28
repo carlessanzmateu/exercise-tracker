@@ -333,9 +333,26 @@ describe('<Settings /> health import (F4-T007)', () => {
 describe('<Settings /> health import help (F5-T003)', () => {
   it('shows help describing the v2 raw-samples import format', () => {
     renderSettings();
-    expect(screen.getByText(/"version": 2/)).toBeInTheDocument();
-    expect(screen.getByText(/"samples"/)).toBeInTheDocument();
+    expect(screen.getAllByText(/"version"\s*:\s*2/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/"samples"/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/"steps"/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/"distance"/).length).toBeGreaterThan(0);
+  });
+
+  it('includes a beginner step-by-step Shortcuts tutorial', () => {
+    renderSettings();
+    expect(screen.getAllByText(/Buscar muestras médicas/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Repetir con cada/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Preguntar dónde guardar/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Elemento de repetición/i).length).toBeGreaterThan(0);
+  });
+
+  it('accepts both .json and .txt files in the health import input', () => {
+    renderSettings();
+    const label = screen.getByText(/^importar datos de salud$/i).closest('label')!;
+    const input = label.querySelector('input[type="file"]') as HTMLInputElement;
+    const accept = input.getAttribute('accept') ?? '';
+    expect(accept).toMatch(/\.json/);
+    expect(accept).toMatch(/\.txt/);
   });
 });

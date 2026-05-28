@@ -330,10 +330,12 @@ describe('<Settings /> health import (F4-T007)', () => {
   });
 });
 
-describe('<Settings /> health import help (F4-T009)', () => {
-  it('shows help describing the expected health import format', () => {
+describe('<Settings /> health import help (F5-T003)', () => {
+  it('shows help describing the v2 raw-samples import format', () => {
     renderSettings();
-    expect(screen.getByText(/"version": 1/)).toBeInTheDocument();
-    expect(screen.getByText(/steps/)).toBeInTheDocument();
+    expect(screen.getByText(/"version": 2/)).toBeInTheDocument();
+    expect(screen.getByText(/"samples"/)).toBeInTheDocument();
+    expect(screen.getAllByText(/"steps"/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/"distance"/).length).toBeGreaterThan(0);
   });
 });

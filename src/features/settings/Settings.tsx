@@ -153,20 +153,28 @@ export function Settings({ now = () => new Date() }: { now?: () => Date } = {}) 
         <ol>
           <li>Abre la app Atajos y crea un atajo.</li>
           <li>
-            Usa &laquo;Obtener muestras de salud&raquo; para Pasos y para Distancia a pie y en
-            carrera, agrupadas por día.
+            Usa &laquo;Buscar muestras médicas&raquo; con tipo &laquo;Pasos&raquo; y otra acción con
+            &laquo;Distancia a pie y en carrera&raquo; (sin agrupar).
           </li>
           <li>
-            Construye un objeto con este formato (distancia en kilómetros) y guárdalo como JSON:
+            Recorre cada lista con &laquo;Repetir con cada&raquo; y añade a una variable de texto un
+            objeto por muestra con su <code>metric</code>, <code>date</code> (fecha de inicio) y
+            <code>value</code>. No hace falta sumar nada: la app agrupa por día al importar.
           </li>
+          <li>Envuélvelo en este formato y guárdalo como JSON:</li>
         </ol>
         <pre>
           <code>
             {
-              '{ "version": 1, "days": [ { "date": "2026-05-25", "steps": 8423, "distanceKm": 6.21 } ] }'
+              '{ "version": 2, "samples": [ { "metric": "steps", "date": "2026-05-25T08:13:00", "value": 1200 }, { "metric": "distance", "date": "2026-05-25T08:13:00", "value": 0.92 } ] }'
             }
           </code>
         </pre>
+        <p>
+          <code>metric</code>: <code>&quot;steps&quot;</code> (conteo) o{' '}
+          <code>&quot;distance&quot;</code> (kilómetros). <code>date</code>: ISO local de la muestra
+          o <code>YYYY-MM-DD</code>.
+        </p>
         <p>Después selecciónalo en &laquo;Importar datos de Salud&raquo;.</p>
       </details>
 

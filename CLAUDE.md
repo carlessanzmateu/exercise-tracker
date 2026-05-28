@@ -17,6 +17,7 @@ La **Fase 3** (métricas, gráficas y proyecciones, con D3.js) está **terminada
 
 La **Fase 4** (importar datos de Salud del iPhone: pasos y distancia, vía Atajo→JSON) está **terminada**: todas sus tareas (F4-T001 … F4-T009) están en `done`. **No revisites `phase-4/`** salvo consulta histórica puntual; no hay trabajo pendiente ahí.
 
-No hay una fase posterior definida todavía. Si el usuario plantea trabajo nuevo, acuérdalo con él antes de crear una `phase-5/`.
+La **Fase 5** (importar Salud por muestras crudas: el Atajo vuelca muestras y la app agrupa por día) es **lo próximo a implementar**. Lee `phase-5/tasks-summary.md` para conocer el estado del trabajo y cuál es la siguiente tarea.
 
 @Requirements.md
+@phase-5/tasks-summary.md

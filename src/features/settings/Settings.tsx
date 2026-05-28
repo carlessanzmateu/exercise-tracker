@@ -101,9 +101,11 @@ export function Settings({ now = () => new Date() }: { now?: () => Date } = {}) 
       payload = JSON.parse(text);
     } catch (parseErr) {
       const detail = parseErr instanceof Error ? parseErr.message : String(parseErr);
-      const preview = text.slice(0, 120).replace(/\s+/g, ' ').trim();
+      const flatten = (s: string) => s.replace(/\s+/g, ' ').trim();
+      const head = flatten(text.slice(0, 200));
+      const tail = flatten(text.slice(-200));
       setError(
-        `El fichero no es un JSON válido. Detalle: ${detail}. Inicio del fichero: «${preview}»`,
+        `El fichero no es un JSON válido. Detalle: ${detail}. Longitud: ${text.length} caracteres. Inicio: «${head}». Final: «${tail}».`,
       );
       return;
     }

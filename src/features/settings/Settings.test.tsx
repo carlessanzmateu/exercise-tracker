@@ -330,6 +330,18 @@ describe('<Settings /> health import (F4-T007)', () => {
     expect(alert.textContent).toMatch(/esto no es/);
   });
 
+  it('includes the end of the file and its length when parsing fails on a long file', async () => {
+    renderSettings();
+    const head = '{"version":2,"samples":[';
+    const middle = '{"metric":"steps","date":"2026-05-25","value":62},'.repeat(20);
+    const broken = '{"metric":"distance","date":"2026-05-25","value":0.92 km}]';
+    const badContent = head + middle + broken;
+    fireEvent.change(healthInput(), { target: { files: [makeJsonFile(badContent)] } });
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toMatch(/0\.92 km/);
+    expect(alert.textContent).toMatch(new RegExp(String(badContent.length)));
+  });
+
   it('shows an alert-error when the health payload is invalid', async () => {
     renderSettings();
     fireEvent.change(healthInput(), {

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useSessionRepository } from '@/data/useSessionRepository';
+import type { HealthDay } from '@/domain/health/healthDay';
 import type { Session } from '@/domain/types';
 
 import { ActivityPanel } from './ActivityPanel';
@@ -12,36 +13,42 @@ import { MuscleVolumePanel } from './MuscleVolumePanel';
 import { PersonalRecordsPanel } from './PersonalRecordsPanel';
 import { TonnagePanel } from './TonnagePanel';
 
+type PanelSource = 'sessions' | 'health';
+
 interface PanelDef {
   id: string;
   title: string;
+  source: PanelSource;
 }
 
 const PANELS: PanelDef[] = [
-  { id: 'frequency', title: 'Frecuencia' },
-  { id: 'exercise', title: 'Progreso por ejercicio' },
-  { id: 'prs', title: 'Records personales' },
-  { id: 'muscle-volume', title: 'Volumen por grupo muscular' },
-  { id: 'cardio', title: 'Cardio' },
-  { id: 'tonnage', title: 'Tonelaje total' },
-  { id: 'activity', title: 'Actividad' },
+  { id: 'frequency', title: 'Frecuencia', source: 'sessions' },
+  { id: 'exercise', title: 'Progreso por ejercicio', source: 'sessions' },
+  { id: 'prs', title: 'Records personales', source: 'sessions' },
+  { id: 'muscle-volume', title: 'Volumen por grupo muscular', source: 'sessions' },
+  { id: 'cardio', title: 'Cardio', source: 'sessions' },
+  { id: 'tonnage', title: 'Tonelaje total', source: 'sessions' },
+  { id: 'activity', title: 'Actividad', source: 'health' },
 ];
 
 export function Progress() {
   const repo = useSessionRepository();
   const [sessions, setSessions] = useState<Session[] | null>(null);
+  const [healthDays, setHealthDays] = useState<HealthDay[] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    repo.list().then((items) => {
-      if (!cancelled) setSessions(items);
+    Promise.all([repo.list(), repo.listHealthDays()]).then(([items, days]) => {
+      if (cancelled) return;
+      setSessions(items);
+      setHealthDays(days);
     });
     return () => {
       cancelled = true;
     };
   }, [repo]);
 
-  if (sessions === null) {
+  if (sessions === null || healthDays === null) {
     return (
       <section data-testid="route-progress" aria-busy="true">
         <h2 className="page-title">Progreso</h2>
@@ -50,7 +57,10 @@ export function Progress() {
     );
   }
 
-  if (sessions.length === 0) {
+  const hasSessions = sessions.length > 0;
+  const hasHealth = healthDays.length > 0;
+
+  if (!hasSessions && !hasHealth) {
     return (
       <section data-testid="route-progress">
         <h2 className="page-title">Progreso</h2>
@@ -62,10 +72,12 @@ export function Progress() {
     );
   }
 
+  const visiblePanels = PANELS.filter((p) => (p.source === 'sessions' ? hasSessions : hasHealth));
+
   return (
     <section data-testid="route-progress">
       <h2 className="page-title">Progreso</h2>
-      {PANELS.map((panel) => (
+      {visiblePanels.map((panel) => (
         <section key={panel.id} className="progress-panel" data-panel={panel.id}>
           <h3 className="progress-panel__title">{panel.title}</h3>
           {panel.id === 'frequency' && <FrequencyPanel sessions={sessions} />}

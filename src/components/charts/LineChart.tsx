@@ -27,7 +27,16 @@ export interface LineChartProps {
 }
 
 const MARGIN = { top: 8, right: 12, bottom: 24, left: 44 };
-const formatDateTick = timeFormat('%-m/%y');
+const DAY_MS = 86_400_000;
+const formatDay = timeFormat('%-d/%-m');
+const formatMonth = timeFormat('%-m/%y');
+const formatYear = timeFormat('%Y');
+
+function pickDateFormatter(rangeMs: number): (d: Date) => string {
+  if (rangeMs <= 31 * DAY_MS) return formatDay;
+  if (rangeMs <= 2 * 365 * DAY_MS) return formatMonth;
+  return formatYear;
+}
 
 function toDate(point: LinePoint): Date {
   return new Date(point.date);
@@ -98,6 +107,7 @@ export function LineChart({
 
   const yTicks = yScale.ticks(4);
   const xTicks = xScale.ticks(4);
+  const formatDateTick = pickDateFormatter(xMax.getTime() - xMin.getTime());
 
   return (
     <div ref={ref} className="chart">

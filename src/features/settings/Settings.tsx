@@ -99,8 +99,12 @@ export function Settings({ now = () => new Date() }: { now?: () => Date } = {}) 
     let payload: unknown;
     try {
       payload = JSON.parse(text);
-    } catch {
-      setError('El fichero no es un JSON válido.');
+    } catch (parseErr) {
+      const detail = parseErr instanceof Error ? parseErr.message : String(parseErr);
+      const preview = text.slice(0, 120).replace(/\s+/g, ' ').trim();
+      setError(
+        `El fichero no es un JSON válido. Detalle: ${detail}. Inicio del fichero: «${preview}»`,
+      );
       return;
     }
 

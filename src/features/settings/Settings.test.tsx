@@ -321,6 +321,15 @@ describe('<Settings /> health import (F4-T007)', () => {
     expect(await screen.findByRole('alert')).toHaveClass('alert-error');
   });
 
+  it('includes the JSON parse error detail and a content preview when parsing fails', async () => {
+    renderSettings();
+    const badContent = 'esto no es {json valido}';
+    fireEvent.change(healthInput(), { target: { files: [makeJsonFile(badContent)] } });
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toMatch(/JSON/i);
+    expect(alert.textContent).toMatch(/esto no es/);
+  });
+
   it('shows an alert-error when the health payload is invalid', async () => {
     renderSettings();
     fireEvent.change(healthInput(), {
